@@ -71,9 +71,9 @@ public final class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
+        s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
         s.setSupportZoom(false);
-        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
         v.setWebViewClient(new WebViewClient() {
             @Override
@@ -93,31 +93,29 @@ public final class MainActivity extends Activity {
         return v;
     }
 
+    /**
+     * 启动中的状态页。配色和字号照旧版搬：不设背景色（露出窗口背景 #0C0A09），
+     * 主文案 cyan-300 / 16sp，补充说明 stone-500 / 11sp。旧版就是这个观感，
+     * 之前那版自己加了"氢氦跑"大标题和青色系文字，和旧手机上的样子对不上。
+     */
     private LinearLayout buildStatusView() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER);
-        box.setBackgroundColor(Color.parseColor("#0B1220"));
-        box.setPadding(dp(28), dp(28), dp(28), dp(28));
-
-        TextView title = new TextView(this);
-        title.setText("氢氦跑");
-        title.setTextColor(Color.parseColor("#E1F5EE"));
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-        title.setGravity(Gravity.CENTER);
+        box.setPadding(dp(24), dp(24), dp(24), dp(24));
 
         statusText = new TextView(this);
-        statusText.setTextColor(Color.parseColor("#9FE1CB"));
-        statusText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        statusText.setTextColor(0xFF67E8F9);
+        statusText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         statusText.setGravity(Gravity.CENTER);
-        statusText.setPadding(0, dp(14), 0, dp(6));
 
         statusHint = new TextView(this);
-        statusHint.setTextColor(Color.parseColor("#5DCAA5"));
-        statusHint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        statusHint.setTextColor(0xFF78716C);
+        statusHint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
         statusHint.setGravity(Gravity.CENTER);
+        statusHint.setPadding(0, dp(12), 0, 0);
+        statusHint.setTextIsSelectable(true);
 
-        box.addView(title);
         box.addView(statusText);
         box.addView(statusHint);
         return box;

@@ -36,14 +36,14 @@ export const appConfig = {
 };
 
 export const urls = {
-  github: 'https://github.com/hzhaohe38-lab/byerun-web.git',
+  github: 'https://github.com/hzhaohe38-lab/autorun-java',
 };
 
 // This build's own version label. The prefix is fixed; only the number changes,
 // and it is supplied before each packaging run (it also names the APK file).
 export const releaseInfo = {
   prefix: '氢氦跑-autorun-H',
-  version: '2.1',
+  version: '2.2',
 };
 
 export const releaseLabel = `当前版本: ${releaseInfo.prefix}${releaseInfo.version}`;

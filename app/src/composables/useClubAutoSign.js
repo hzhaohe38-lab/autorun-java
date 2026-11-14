@@ -12,6 +12,12 @@ const POLL_INTERVAL = 10 * 1000;
 const RESULT_POLL_INTERVAL = 3 * 1000;
 const RESULT_WATCH_MS = 5 * 60 * 1000;
 const AUTO_SIGN_API = '/api/auto-sign';
+// 自动签到只关心近期活动。超过这个跨度的"待执行任务"一律视为脏数据：
+// 一条上一学期的报名记录被滚到明年，界面就会显示几千小时后的倒计时。
+const MAX_SCHEDULE_AHEAD_MS = 30 * 24 * 60 * 60 * 1000;
+// 与服务端 STALE_TOLERANCE_MS 保持一致：超过这个时间还没签，补签已经没有意义，
+// 排进去只会让界面一直显示"执行中"。
+const STALE_TOLERANCE_MS = 15 * 60 * 1000;
 
 // Polling only happens inside a small window around a target timestamp, so we
 // do not hammer the club backend while nothing is about to fire.
@@ -106,9 +112,13 @@ function parseMmdd(str) {
   const now = new Date();
   let year = now.getFullYear();
   const d = new Date(year, m - 1, day, 0, 0, 0, 0);
-  // If the date seems to have passed and is more than 2 months ago, try next year
+  // 日期已过（超过 60 天）→ 尝试算作明年，用于"12 月底报名 1 月初活动"。
   if (d.getTime() < Date.now() - 60 * 24 * 60 * 60000) {
     d.setFullYear(year + 1);
+    // 但滚完一年还落在 60 天以外，那就不是"明年的活动"，而是上学期留下的旧报名记录。
+    // 以前没有这道闸：一条 09-15 的旧记录会被滚到明年 09-15，
+    // 界面于是显示"将在 7279 小时后执行签到"。
+    if (d.getTime() > Date.now() + 60 * 24 * 60 * 60 * 1000) return null;
   }
   return isNaN(d.getTime()) ? null : d;
 }
@@ -300,9 +310,18 @@ async function fetchTodayTask() {
 
 function formatCountdown(remainingMs) {
   const totalSec = Math.max(0, Math.floor(remainingMs / 1000));
-  const h = Math.floor(totalSec / 3600);
+  const day = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
+  // 超过一天就换成"天"，否则一旦有脏数据会显示成"7279 小时"这种
+  // 一眼看不出问题的数字；"303天"至少立刻能看出不对劲。
+  if (day > 0) {
+    const parts = [`${day}天`];
+    if (h > 0) parts.push(`${h}小时`);
+    if (m > 0) parts.push(`${m}分`);
+    return parts.join('');
+  }
   const parts = [];
   if (h > 0) parts.push(`${h}小时`);
   if (m > 0) parts.push(`${m}分`);
@@ -549,7 +568,7 @@ function recomputeDisplay(today) {
   // 2) No active today task — show the closest scheduled future execution.
   const pend = pendingTasks()
     .map((s) => ({ s, target: Number(s.targetTimestamp || 0) }))
-    .filter((x) => x.target > 0)
+    .filter((x) => x.target > 0 && x.target <= Date.now() + MAX_SCHEDULE_AHEAD_MS)
     .sort((a, b) => a.target - b.target)[0];
 
   if (pend) {
@@ -725,9 +744,11 @@ async function planToday(today) {
   const outDone = String(today.signBackStatus ?? '') === '1';
   const tasks = [];
 
+  const fresh = (t) => t && t.getTime() >= Date.now() - STALE_TOLERANCE_MS;
+
   if (!inDone && today.signInTime) {
     const d = buildTodayDate(today.signInTime);
-    if (d) {
+    if (fresh(d)) {
       tasks.push(
         normalizeTaskInput(aid, today.activityName, '1', today.signInTime, d.getTime(), today.latitude, today.longitude),
       );
@@ -737,7 +758,7 @@ async function planToday(today) {
     const outTime = today.signBackTime || today.signBackLimitTime || today.endTime || today.activityEndTime;
     if (outTime) {
       const d = buildTodayDate(outTime);
-      if (d) {
+      if (fresh(d)) {
         tasks.push(
           normalizeTaskInput(aid, today.activityName, '2', outTime, d.getTime(), today.latitude, today.longitude),
         );
@@ -816,6 +837,7 @@ async function planFuture() {
     startAt.setHours(st.h, st.m, st.s || 0, 0);
     const ms = startAt.getTime();
     if (ms < now - 60 * 60 * 1000) continue; // started over an hour ago — not schedulable
+    if (ms > now + MAX_SCHEDULE_AHEAD_MS) continue; // 超过一个月，不可能是待执行活动
     if (ms < bestSignInMs) {
       bestSignInMs = ms;
       bestItem = item;

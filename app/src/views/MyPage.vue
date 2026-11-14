@@ -26,9 +26,10 @@
     </div>
 
     <!-- Sits at the bottom of the page, just above the bottom tab bar. -->
-    <p class="mt-auto pt-6 pb-1 text-center text-[10px] tracking-wide text-gray-500">
-      {{ versionLabel }}
-    </p>
+    <div class="mt-auto pt-6 pb-1 text-center text-[10px] tracking-wide text-gray-500">
+      <p>{{ versionLabel }}</p>
+      <p>Made By Helium</p>
+    </div>
   </div>
 </template>
 

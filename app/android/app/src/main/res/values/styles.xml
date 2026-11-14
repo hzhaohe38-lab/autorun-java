@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- 与旧版一致：深色窗口背景，避免 WebView 加载前闪白。
+         系统栏颜色故意不设——不设就是主题默认的黑色，观感和旧版一致。
+         之前把状态栏 / 导航栏写成 #0B1220 深蓝，那正是"顶部和底部不一样"的原因。 -->
     <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:windowBackground">#0B1220</item>
-        <item name="android:statusBarColor">#0B1220</item>
-        <item name="android:navigationBarColor">#0B1220</item>
+        <item name="android:windowBackground">@color/appBackground</item>
     </style>
+
 </resources>

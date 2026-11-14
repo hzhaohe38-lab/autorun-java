@@ -29,7 +29,7 @@ if ! echo "$VERSION" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
   exit 1
 fi
 
-APK_DIR="D:/StudyProjects/byerun-web/APK"
+APK_DIR="$ROOT/output"
 APK_NAME="氢氦跑-autorun-H${VERSION}.apk"
 
 echo "==> 版本号: 氢氦跑-autorun-H${VERSION}"
@@ -37,9 +37,11 @@ node -e "
 const fs=require('fs');
 const p='app/src/utils/config.js';
 let s=fs.readFileSync(p,'utf8');
-const before=s;
-s=s.replace(/version:\s*'[^']*'/, \"version: '$VERSION'\");
-if(s===before){ console.error('未找到 releaseInfo.version，放弃'); process.exit(1); }
+const re=/version:\s*'[^']*'/;
+if(!re.test(s)){ console.error('未找到 releaseInfo.version，放弃'); process.exit(1); }
+// 先判断再替换：版本号本来就等于目标值时，替换前后内容相同，
+// 用'内容是否变化'来判断会误报成找不到。
+s=s.replace(re, \"version: '$VERSION'\");
 fs.writeFileSync(p,s);
 "
 
@@ -49,14 +51,7 @@ cd "$ROOT/app"
 npm run build
 
 echo "==> 同步到 assets"
-DEST="$ROOT/app/android/app/src/main/assets/web"
-rm -rf "$DEST"
-mkdir -p "$DEST"
-cp -r "$ROOT/app/dist/." "$DEST/"
-rm -f "$DEST"/assets/remixicon-*.svg
-rm -f "$DEST"/assets/remixicon-*.eot
-rm -f "$DEST"/assets/remixicon-*.ttf
-rm -f "$DEST"/assets/remixicon-*.woff
+node "$ROOT/tools/sync-web.mjs"
 
 echo "==> 构建 APK"
 cd "$ROOT/app/android"
@@ -71,7 +66,7 @@ fi
 mkdir -p "$APK_DIR"
 cp "$SRC" "$APK_DIR/$APK_NAME"
 
-SIZE=$(du -h "$APK_DIR/$APK_NAME" | cut -f1)
+SIZE=$(node -e "console.log((require('fs').statSync(process.argv[1]).size/1048576).toFixed(2)+' MB')" "$APK_DIR/$APK_NAME")
 echo
 echo "完成: $APK_DIR/$APK_NAME ($SIZE)"
 echo "安装: adb install -r \"$APK_DIR/$APK_NAME\""

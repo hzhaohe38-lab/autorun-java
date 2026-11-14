@@ -249,6 +249,11 @@ public final class SignEngine {
             nt.attempts = sameDay ? existing.attempts : 0;
             nt.createdAt = System.currentTimeMillis();
 
+            if (!isSchedulable(nt.targetTimestamp)) {
+                L.w("AutoSign", "拒绝排程 " + key + "：时间戳不在合理范围（" + nt.targetTimestamp + "）");
+                continue;
+            }
+
             tasks.put(key, nt);
             count++;
         }
@@ -729,8 +734,7 @@ public final class SignEngine {
 
     private void addWanted(List<String[]> out, String signType, String rawTime, long now) {
         long target = clockToTodayMs(rawTime);
-        if (target == 0) return;
-        if (target < now - Const.STALE_TOLERANCE_MS) return; // window already gone
+        if (!isSchedulable(target)) return; // zero, already gone, or nonsense
         out.add(new String[]{signType, rawTime == null ? "" : rawTime, String.valueOf(target)});
     }
 
@@ -836,6 +840,18 @@ public final class SignEngine {
 
     public boolean hasWatches() {
         return !watches.isEmpty();
+    }
+
+    /**
+     * A task is only worth queueing if it fires soon: not already stale past the
+     * tolerance window, and not absurdly far away. The second half is what stops a
+     * mis-parsed date (an old signup rolled into next year) from becoming a task.
+     */
+    private static boolean isSchedulable(long target) {
+        long now = System.currentTimeMillis();
+        if (target <= 0) return false;
+        if (target < now - Const.STALE_TOLERANCE_MS) return false;
+        return target <= now + Const.MAX_SCHEDULE_AHEAD_MS;
     }
 
     private static String taskKeyOf(String studentId, long activityId, String signType) {

@@ -52,21 +52,21 @@ Windows 用 `tools\build.bat`，参数一致。
 
 ## 在电脑上验证
 
-不想每次都装 APK 时，让引擎直接跑在电脑上：
-
 ```bash
-./tools/desktop.sh
+cd app
+npm run dev
 ```
 
-然后浏览器打开 **http://127.0.0.1:3000**。这个地址提供的就是 APK 里那份前端，接口也走同一套 Java 引擎。
+终端会打印一行 `Local: http://localhost:5173/`，点开就是完整可用的界面——登录、签到、定时任务全都通。
 
-改前端需要热更新时，另开一个终端：
+这一条命令会自动做完：编译 Java 引擎 → 启动引擎（3000）→ 启动 Vite（5173）→ Vite 把 `/auth`、`/clubactivity`、
+`/unirun`、`/api/auto-*` 转发给引擎。改前端代码即时热更新，`Ctrl+C` 两个进程一起停。
+
+只想单独跑后端（前端已经开在别处时）：
 
 ```bash
-cd app && npm run dev      # 5173，代理到 3000
+./tools/desktop.sh          # 只起引擎，访问 http://127.0.0.1:3000
 ```
-
-`3000` 是构建后的产物（改代码要重新 build），`5173` 是 Vite 实时编译。两者可以同时开着。
 
 桌面版和手机版只有一个差别：**桌面靠 5 秒轮询，手机靠 AlarmManager 精确闹钟**。签名、排程、轨迹生成、落盘都是同一份代码。
 运行时状态写在 `runtime/`，删掉等于重置。
@@ -121,10 +121,11 @@ adb install -r app/android/app/build/outputs/apk/debug/app-debug.apk
 
 | 做什么 | 命令 |
 |---|---|
+| **电脑上跑起来（推荐）** | `cd app && npm run dev` → 打开 5173 |
+| 只起后端引擎 | `./tools/desktop.sh` → 打开 3000 |
 | 出包（用现成前端产物） | `./tools/build.sh` |
 | 重建前端并出包 | `./tools/build.sh --web` |
 | **打包正式版**（改版本号 + 进 APK 目录） | `./tools/package.sh 2.2` |
-| **在电脑上跑起来** | `./tools/desktop.sh` |
 | Windows 出包 | `tools\build.bat` |
 | 安装到已连接设备 | `adb install -r app/android/app/build/outputs/apk/debug/app-debug.apk` |
 | 只构建不安装 | `cd app/android && ./gradlew assembleDebug` |
@@ -169,8 +170,7 @@ tools/                      脚本
 ├── build.sh / build.bat     出包
 ├── package.sh               打包正式版（改版本号 + 命名 + 归位）
 ├── desktop.sh               在电脑上跑引擎
-├── desktop/                 桌面入口（DesktopMain / FileAssets）
-└── gen-*.mjs / *Diff.java   轨迹、签名、种子的一致性校验
+└── desktop/                 桌面入口（DesktopMain / FileAssets）
 
 libs/json.jar               桌面端用的 org.json（APK 里用系统自带那份）
 ```
@@ -199,18 +199,6 @@ Android 14+ 只对 targetSdk ≥ 34 强制前台服务类型。停在 28，精�
 
 **手动跑步那条链路不要碰。** `app/src/components/SubmitRun.vue`、`composables/useRunSubmission.js`、
 `utils/track.js`、`utils/run.js` 是已验证可用的提交路径，任何自动化都应该复制算法另写，而不是重构它们。
-
-## 校验工具
-
-`tools/` 里有一套和原始 JS 实现的对拍脚本，两端喂同一串种子随机数，逐点比对：
-
-```bash
-# 轨迹：3 条地图 × 3 种距离 × 2 种时长，输出应与 Java 侧逐点一致
-node tools/gen-expected.mjs app/android/app/src/main/assets/maps/cuit_hkg.json 3000 20 20261114
-
-# 签名
-node tools/gen-sign.mjs
-```
 
 ## 地图
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the web UI's bg-stone-950 -->
+    <color name="appBackground">#0C0A09</color>
+</resources>

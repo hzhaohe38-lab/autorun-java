@@ -62,8 +62,8 @@ public final class DesktopMain {
         signEngine.logStartupForWatches();
 
         L.i("Autorun/Desktop", "");
-        L.i("Autorun/Desktop", "  http://127.0.0.1:" + Const.PORT + "     ← 直接打开这个");
-        L.i("Autorun/Desktop", "  前端热更新: cd app && npm run dev  (5173)");
+        L.i("Autorun/Desktop", "  引擎地址: http://127.0.0.1:" + Const.PORT + "  （浏览器可直接打开）");
+        L.i("Autorun/Desktop", "  要热更新界面: cd app && npm run dev  （会自动复用本服务）");
         L.i("Autorun/Desktop", "  Ctrl+C 退出");
         L.i("Autorun/Desktop", "");
 

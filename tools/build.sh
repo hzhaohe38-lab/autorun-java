@@ -15,15 +15,7 @@ if [ "$1" = "--web" ]; then
   npm run build
 
   echo "==> 同步到 assets"
-  DEST="$ROOT/app/android/app/src/main/assets/web"
-  rm -rf "$DEST"
-  mkdir -p "$DEST"
-  cp -r "$ROOT/app/dist/." "$DEST/"
-  # 字体只留 woff2，其余格式占 4.4MB 且现代 WebView 不会用到
-  rm -f "$DEST"/assets/remixicon-*.svg
-  rm -f "$DEST"/assets/remixicon-*.eot
-  rm -f "$DEST"/assets/remixicon-*.ttf
-  rm -f "$DEST"/assets/remixicon-*.woff
+  node "$ROOT/tools/sync-web.mjs"
 fi
 
 echo "==> 构建 APK"
