@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+    }
+}
+
+// 版本常量，供 app/build.gradle 通过 rootProject.ext.* 读取。
+ext {
+    minSdkVersion = 24
+    compileSdkVersion = 36
+
+    // 28 是刻意的，不是写错。
+    // Android 12+ 只对 targetSdk >= 31 强制 SCHEDULE_EXACT_ALARM 权限，
+    // Android 14+ 只对 targetSdk >= 34 强制前台服务类型。
+    // 停在 28，精确闹钟和开机自启前台服务都不用申请额外权限——
+    // 这正是一个后台定时签到程序最需要的东西。代价是上不了 Google Play。
+    targetSdkVersion = 28
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

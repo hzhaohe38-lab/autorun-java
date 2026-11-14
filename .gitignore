@@ -1,0 +1,32 @@
+# ---- 构建产物与缓存（任意层级）----
+.gradle/
+build/
+node_modules/
+dist/
+
+# ---- 打包产物 ----
+*.apk
+*.aab
+*.ap_
+*.log
+
+# ---- 本机配置（每台机器路径不同，绝不提交）----
+local.properties
+
+# ---- IDE ----
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ---- 前端本地环境（.env.example 才是模板）----
+.env
+.env.local
+.env.*.local
+
+# ---- 桌面运行的本地状态（任务、配置、日志）----
+runtime/
+
+# 注意：app/android/app/src/main/assets/web/ 是故意提交的。
+# 它是前端构建产物，提交后 clone 下来可以直接跑 tools/build.sh 出包，
+# 不需要先装 node 依赖。修改前端后重新生成用 tools/build.sh --web。
