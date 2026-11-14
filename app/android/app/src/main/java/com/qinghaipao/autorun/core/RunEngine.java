@@ -274,6 +274,10 @@ public final class RunEngine {
         Config cfg = configs.get(sid);
         JSONObject out = new JSONObject();
         try {
+            // 前端 applyStatus() 第一行就是 if (payload.code !== 10000) return;
+            // 少了这个字段，地图列表就算返回了也不会被采用，界面永远停在
+            // "加载地图中..."。所有引擎接口都必须带 code。
+            out.put("code", 10000);
             if (cfg == null) {
                 out.put("configured", false);
                 out.put("maps", mapsJson());
