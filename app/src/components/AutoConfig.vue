@@ -138,6 +138,7 @@ import { ref, reactive, computed, inject, onMounted, onUnmounted } from 'vue';
 import { useDataStore } from '@/composables/useDataStore';
 import TimeSelect from '@/components/TimeSelect.vue';
 import DistanceInput from '@/components/DistanceInput.vue';
+import { notifyDataChanged } from '@/utils/appEvents';
 
 defineProps({
   inline: { type: Boolean, default: true },
@@ -262,6 +263,10 @@ const statusLabelClass = computed(() =>
 // silently revert edits the user hasn't saved yet.
 const applyStatus = (payload, { fillForm = false } = {}) => {
   if (!payload || payload.code !== 10000) return;
+  // 定时跑步同样是服务端执行的：检测"今日已完成"由 false 变 true 时广播一次，
+  // 让首页/管理页的里程与次数立刻刷新，而不是等下一次 60 秒轮询。
+  const wasExecuted = !!status.value?.executedToday;
+  if (!wasExecuted && payload.executedToday) notifyDataChanged('auto-run');
   status.value = payload;
   maps.value = Array.isArray(payload.maps) ? payload.maps : [];
   if (!fillForm) return;

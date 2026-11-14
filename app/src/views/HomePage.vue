@@ -35,6 +35,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch, provide, inject } from 'vue';
+import { onDataChanged } from '@/utils/appEvents';
 import RunRecords from '@/components/RunRecords.vue';
 import Club from '@/components/Club.vue';
 import SubmitRun from '@/components/SubmitRun.vue';
@@ -160,6 +161,7 @@ watch(token, () => {
 // restarted. Poll while visible and refresh immediately when the app returns to
 // the foreground.
 let statsTimer = null;
+let stopDataWatch = null;
 
 async function refreshStats() {
   if (document.visibilityState !== 'visible' || !userInfo.value) return;
@@ -199,10 +201,19 @@ onMounted(() => {
   window.visualViewport?.addEventListener('resize', scheduleMeasureHeights);
   window.visualViewport?.addEventListener('scroll', scheduleMeasureHeights);
 
+  // 服务端执行的任务（定时跑步、签到签退）不会给前端发事件，只能靠轮询兜底。
+  // 20 秒足够快，又不至于把上游接口打爆；真正完成的那一刻由 appEvents 的
+  // 广播立即触发刷新，这里只是保底。
   statsTimer = setInterval(() => {
     refreshStats().catch(() => {});
-  }, 60000);
+  }, 20000);
   document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  // 任何一次确认成功的动作（手动跑步、定时跑步、签到、签退）都会广播一次，
+  // 收到就立刻重拉用户数据，让里程 / 次数 / 俱乐部统计当场更新。
+  stopDataWatch = onDataChanged((reason) => {
+    refreshUserData({ background: true }).catch(() => {});
+  });
 
   nextTick(() => {
     updateHeaderCompact(mainScrollRef.value?.scrollTop || 0);
@@ -216,6 +227,7 @@ onUnmounted(() => {
   window.visualViewport?.removeEventListener('scroll', scheduleMeasureHeights);
 
   if (statsTimer) clearInterval(statsTimer);
+  if (stopDataWatch) stopDataWatch();
   document.removeEventListener('visibilitychange', handleVisibilityChange);
 
   if (homeMeasureFrame) {

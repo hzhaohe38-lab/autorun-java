@@ -2,6 +2,7 @@ import { ref, onUnmounted } from 'vue';
 import { api } from './useApi';
 import { useDataStore } from './useDataStore';
 import { getSessionToken } from '@/utils/authStorage';
+import { notifyDataChanged } from '@/utils/appEvents';
 
 const STORAGE_KEY = 'unirun.club_auto_sign';
 const POLL_INTERVAL = 10 * 1000;
@@ -638,7 +639,9 @@ async function checkAndExec(manual = false) {
     for (const s of _scheduled) _lastExec.set(keyOf(s.signType, s.activityId), !!s.executed);
     _baselineDone = true;
   } else {
-    detectExecutions();
+    // 签到/签退是服务端执行的，跑完必须广播一次，
+    // 否则"管理"页顶部的次数统计要等用户杀进程重进才更新。
+    if (detectExecutions()) notifyDataChanged('sign');
   }
 
   updateResultWatch(today);

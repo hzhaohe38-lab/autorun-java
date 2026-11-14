@@ -258,12 +258,16 @@ public final class RunEngine {
             persistRuns();
         }
 
-        JSONObject out = new JSONObject();
+        // 返回体和 /status 完全一致，再附带 detect。
+        //
+        // 前端保存后直接把这份响应当状态对象解析（applyStatus(resp, {fillForm})），
+        // 依赖 code / configured / config / maps / envelope / today 这些字段。
+        // 之前这里返回的是 {code, config, detect, status} 这种另一套形状，
+        // 结果 configured 取不到被当成"未配置"，开关自动关掉，maps 为空又让
+        // 地图区退回"加载地图中..."。
+        JSONObject out = status(sid);
         try {
-            out.put("code", 10000);
-            out.put("config", cfg.toJson());
             out.put("detect", detect);
-            out.put("status", status(sid));
         } catch (Exception ignored) {
         }
         return out;

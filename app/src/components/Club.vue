@@ -388,6 +388,7 @@
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import { api } from '@/composables/useApi';
 import { useDataStore } from '@/composables/useDataStore';
+import { notifyDataChanged } from '@/utils/appEvents';
 import {
   useClubAutoSign,
   autoSignLabel,
@@ -1477,6 +1478,9 @@ async function handleSignTask(signType) {
     showMessage(resolveResponseMessage(data, `${actionText}成功`), 'success');
     await Promise.all([loadSignTask(), loadCurrentList()]);
     refreshAutoSign();
+    // 手动签到/签退也改变了累计次数，立刻通知全局刷新，
+    // 否则要退出重进才能看到"俱乐部次数"变化。
+    notifyDataChanged('sign');
   } catch (error) {
     console.error('handleSignTask failed:', error);
     showMessage('签到/签退操作异常', 'error');
@@ -1522,6 +1526,8 @@ async function handleClubAction(item, type) {
 
     await Promise.all(refreshTasks);
     refreshAutoSign();
+    // 报名 / 取消报名同样改变累计次数，通知全局统计刷新。
+    notifyDataChanged('club');
   } catch (error) {
     console.error('handleClubAction failed:', error);
     showMessage('俱乐部操作异常', 'error');
